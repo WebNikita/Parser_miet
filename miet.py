@@ -1,4 +1,5 @@
 import requests
+import json
 from bs4 import BeautifulSoup as bs
 
 headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
@@ -33,22 +34,34 @@ urls = ['https://miet.ru/people/192',
        'https://miet.ru/people/222',
        'https://miet.ru/people/223',
 		]
-
-def miet_parser(url, headers):
+teachers = {}
+#Парсинг сайта и создание словаря с преподавателями
+def miet_parser(url):
 	session = requests.session()
 	request = session.get(url, headers=headers)
 	if request.status_code == 200:
 		soup = bs(request.content, 'html.parser')
-		divs = soup.find_all('div', attrs = {'class': 'people-list__item'} )
+		divs = soup.find_all('div', attrs = {'class': 'people-list__item'})
 		for div in divs:
-			FIO = div.find('a', attrs = {'class': 'people-list__item-name'}).text	
-			lesson = div.find('span', attrs = {'class': 'people-list__item-post'}).text
-			phone = div.find('span', attrs = {'class': 'people-list__item-phone'}).text
-			email = div.find('span', attrs = {'class': 'people-list__item-email'}).text
-
-		print(len(divs))
-	else:
-		print('Error')
-
+			name = div.find('a', attrs = {'class': 'people-list__item-name'}).text
+			teacher = {'name': name,
+			'post': div.find('span', attrs = {'class': 'people-list__item-post'}).text}
+			email = div.find('span', attrs = {'class': 'people-list__item-email'})
+			if email:
+				#text_email = email.textddd
+				#text_email.split()
+				teacher.update({'email': email.text})
+			name_split = name.split()
+			short_name = name#f'{name_split[0]} {name_split[1][0]}.{name_split[2][0]}.'
+			teachers.update({short_name: teacher.copy()})
+			teacher.clear()
+#Запись словаря в Json
+def dict_to_json():
+	with open("teachers.json", "w", encoding='utf-8') as write_file:
+		write_file.write(json.dumps(teachers, ensure_ascii=False))
+	print('Secsess')
+#Вызов функций
 for url in urls:
-	miet_parser(url, headers)
+	miet_parser(url)
+dict_to_json()
+
